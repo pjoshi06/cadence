@@ -307,6 +307,100 @@ def _resolved_slide(prs, m, period_label, branded):
     _style_table(table)
 
 
+def _batch_slide(prs, period_start, period_end, period_label, branded):
+    from operations.models import BatchJob, JobRun
+
+    jobs = list(BatchJob.objects.filter(is_active=True))
+    if not jobs:
+        return
+    runs = JobRun.objects.filter(
+        run_date__range=(period_start, period_end), job__is_active=True
+    ).select_related("job")
+
+    slide = _add_slide(prs)
+    _header(slide, prs, "Batch Job Status", period_label, branded)
+    margin = Inches(0.5)
+
+    total = runs.count()
+    failed_runs = [r for r in runs if r.status == "FAILED"]
+    success = sum(1 for r in runs if r.status == "SUCCESS")
+    rate = round(success / total * 100, 1) if total else None
+
+    # KPI strip
+    cards = [
+        ("Jobs Tracked", str(len(jobs)), INK),
+        ("Runs Recorded", str(total), INK),
+        ("Failures", str(len(failed_runs)), BAD if failed_runs else GOOD),
+        ("Success Rate", f"{rate}%" if rate is not None else "N/A",
+         GOOD if (rate or 0) >= 98 else (WARN if (rate or 0) >= 90 else BAD)),
+    ]
+    gap = Inches(0.25)
+    card_w = int((prs.slide_width - margin * 2 - gap * 3) / 4)
+    for i, (label, value, color) in enumerate(cards):
+        _kpi_card(slide, margin + i * (card_w + gap), Inches(1.35), card_w,
+                  Inches(1.25), label, value, color)
+
+    top = Inches(2.95)
+    if period_start == period_end:
+        # DSR: per-job status for the day
+        day_runs = {r.job_id: r for r in runs}
+        display, overflow_ok = [], 0
+        for job in jobs:
+            run = day_runs.get(job.id)
+            if run and run.status == "SUCCESS" and len(display) >= 12:
+                overflow_ok += 1
+                continue
+            display.append((job, run))
+            if len(display) >= 14:
+                break
+        table = _add_table(slide, len(display) + 1, 4, margin, top,
+                           prs.slide_width - margin * 2,
+                           Inches(0.32) * (len(display) + 1))
+        for c, htxt in enumerate(["Job", "Category", "Status", "Remarks"]):
+            _set_cell(table, 0, c, htxt)
+        status_colors = {"SUCCESS": GOOD, "FAILED": BAD, "RUNNING": ACCENT, "SKIPPED": MUTED}
+        for r, (job, run) in enumerate(display, start=1):
+            _set_cell(table, r, 0, job.name)
+            _set_cell(table, r, 1, job.get_category_display())
+            if run:
+                _set_cell(table, r, 2, run.get_status_display(), bold=True,
+                          color=status_colors.get(run.status))
+                _set_cell(table, r, 3, (run.remarks or "—")[:60])
+            else:
+                _set_cell(table, r, 2, "Not updated", color=MUTED)
+                _set_cell(table, r, 3, "—")
+        _style_table(table)
+        if overflow_ok:
+            _textbox(slide, margin, top + Inches(0.32) * (len(display) + 1) + Inches(0.1),
+                     prs.slide_width - margin * 2, Inches(0.3),
+                     f"+ {overflow_ok} more jobs completed successfully.", 10, MUTED)
+    else:
+        # WSR/MSR: failures list (aggregate view)
+        _textbox(slide, margin, top - Inches(0.15), Inches(6), Inches(0.35),
+                 "FAILURES IN PERIOD", 11, MUTED, bold=True)
+        if failed_runs:
+            show = failed_runs[:12]
+            table = _add_table(slide, len(show) + 1, 4, margin, top + Inches(0.25),
+                               prs.slide_width - margin * 2,
+                               Inches(0.32) * (len(show) + 1))
+            for c, htxt in enumerate(["Date", "Job", "Category", "Remarks"]):
+                _set_cell(table, 0, c, htxt)
+            for r, run in enumerate(sorted(show, key=lambda x: x.run_date), start=1):
+                _set_cell(table, r, 0, run.run_date.strftime("%d %b"))
+                _set_cell(table, r, 1, run.job.name)
+                _set_cell(table, r, 2, run.job.get_category_display())
+                _set_cell(table, r, 3, (run.remarks or "—")[:60])
+            _style_table(table)
+            if len(failed_runs) > 12:
+                _textbox(slide, margin, top + Inches(0.25) + Inches(0.32) * 13 + Inches(0.1),
+                         prs.slide_width - margin * 2, Inches(0.3),
+                         f"+ {len(failed_runs) - 12} more failures — see portal for full list.",
+                         10, MUTED)
+        else:
+            _textbox(slide, margin, top + Inches(0.3), Inches(6), Inches(0.4),
+                     "No batch job failures in this period. ✓", 13, GOOD, bold=True)
+
+
 def _highlights_slide(prs, highlights, period_label, branded):
     slide = _add_slide(prs)
     _header(slide, prs, "Highlights & Manager Notes", period_label, branded)
@@ -365,6 +459,7 @@ def build_report(report_type, period_start, period_end, template_path=None,
     _summary_slide(prs, m, period_label, branded)
     _ageing_slide(prs, m, period_label, branded)
     _resolved_slide(prs, m, period_label, branded)
+    _batch_slide(prs, period_start, period_end, period_label, branded)
     _highlights_slide(prs, highlights, period_label, branded)
 
     buf = io.BytesIO()

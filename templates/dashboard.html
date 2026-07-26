@@ -5,7 +5,7 @@
 
 {% block content %}
 <!-- KPI row -->
-<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
   <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
     <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Open Tickets</p>
     <p class="mt-2 text-3xl font-bold text-slate-900">{{ open_tickets }}</p>
@@ -28,6 +28,20 @@
     </p>
     <p class="mt-2 text-[11px] text-slate-400">All-time resolved tickets</p>
   </div>
+  <a href="{% url 'job_board' %}" class="rounded-xl border {% if jobs_failed %}border-red-300 bg-red-50{% else %}border-slate-200 bg-white{% endif %} p-5 shadow-sm transition hover:shadow">
+    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Batch Jobs Today</p>
+    {% if total_jobs %}
+      <p class="mt-2 text-3xl font-bold {% if jobs_failed %}text-red-600{% else %}text-emerald-600{% endif %}">
+        {% if jobs_failed %}{{ jobs_failed }} ✗{% else %}{{ jobs_success }} ✓{% endif %}
+      </p>
+      <p class="mt-2 text-[11px] {% if jobs_failed %}text-red-500 font-semibold{% else %}text-slate-400{% endif %}">
+        {% if jobs_failed %}failed · {{ jobs_success }} ok{% else %}successful{% endif %}{% if jobs_pending %} · {{ jobs_pending }} pending{% endif %}
+      </p>
+    {% else %}
+      <p class="mt-2 text-3xl font-bold text-slate-300">—</p>
+      <p class="mt-2 text-[11px] text-slate-400">No jobs tracked yet</p>
+    {% endif %}
+  </a>
   <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
     <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">On Leave Today</p>
     <p class="mt-2 text-3xl font-bold text-slate-900">{{ on_leave_today|length }}</p>

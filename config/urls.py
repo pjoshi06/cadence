@@ -15,6 +15,7 @@ urlpatterns = [
     path("tasks/", include("workboard.urls")),
     path("leaves/", include("leaves.urls")),
     path("roster/", include("roster.urls")),
+    path("operations/", include("operations.urls")),
     path("reports/", include("reports.urls")),
 ]
 

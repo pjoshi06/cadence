@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Batch Jobs · Cadence{% endblock %}
+{% block page_title %}Batch Health{% endblock %}
+{% block page_subtitle %}Control-M job status — week ending {{ board_end|date:"d M Y" }}{% endblock %}
+{% block header_actions %}
+  <a href="?end={{ prev_end }}{% if sel_category %}&category={{ sel_category }}{% endif %}" class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">‹ Prev</a>
+  <a href="{% url 'job_board' %}" class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Today</a>
+  {% if not is_today %}
+  <a href="?end={{ next_end }}{% if sel_category %}&category={{ sel_category }}{% endif %}" class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Next ›</a>
+  {% endif %}
+  {% if can_manage %}
+  <a href="{% url 'job_master' %}" class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Job master</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Day summary -->
+<div class="mb-4 flex flex-wrap items-center gap-3">
+  <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">✓ {{ todays.SUCCESS }} success</span>
+  <span class="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700">✗ {{ todays.FAILED }} failed</span>
+  <span class="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-bold text-sky-700">▶ {{ todays.RUNNING }} running</span>
+  <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-500">{{ pending }} not updated</span>
+
+  <div class="ml-auto flex items-center gap-2">
+    <form method="get" class="flex items-center gap-2">
+      {% if not is_today %}<input type="hidden" name="end" value="{{ board_end|date:'Y-m-d' }}">{% endif %}
+      <select name="category" onchange="this.form.submit()"
+              class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+        <option value="">All categories</option>
+        {% for value, label in categories %}
+          <option value="{{ value }}" {% if sel_category == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    {% if pending %}
+    <form method="post" action="{% url 'job_mark_rest' %}"
+          onsubmit="return confirm('Mark all {{ pending }} not-updated jobs as Success for {{ board_end|date:"d M" }}?');">
+      {% csrf_token %}
+      <input type="hidden" name="date" value="{{ board_end|date:'Y-m-d' }}">
+      <button class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">✓ Mark rest success</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+{% if failures_today %}
+<div class="mb-4 rounded-xl border border-red-200 bg-red-50 p-4">
+  <p class="mb-2 text-sm font-bold text-red-800">Failures on {{ board_end|date:"d M" }} — needs attention</p>
+  <ul class="space-y-1.5">
+    {% for run in failures_today %}
+    <li class="flex flex-wrap items-center gap-2 text-sm text-red-900">
+      <span class="font-mono text-xs font-bold">{{ run.job.name }}</span>
+      <span class="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold uppercase">{{ run.job.get_criticality_display }}</span>
+      {% if run.remarks %}<span class="text-red-700">— {{ run.remarks }}</span>{% else %}<span class="italic text-red-400">no remarks yet (add via cell menu)</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+  <table class="min-w-full text-sm">
+    <thead>
+      <tr class="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <th class="sticky left-0 bg-slate-50 px-4 py-3">Job</th>
+        {% for d in days %}
+          <th class="px-2 py-3 text-center {% if d == today %}bg-indigo-50 text-indigo-700{% endif %}">{{ d|date:"D" }}<br><span class="font-normal">{{ d|date:"d M" }}</span></th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for row in rows %}
+      <tr class="hover:bg-slate-50/50">
+        <td class="sticky left-0 bg-white px-4 py-2">
+          <p class="font-mono text-xs font-bold text-slate-800">{{ row.job.name }}</p>
+          <p class="text-[11px] text-slate-400">
+            <span class="{% if row.job.category == 'INFRA' %}text-sky-500{% elif row.job.category == 'PIPELINE' %}text-violet-500{% endif %}">{{ row.job.get_category_display }}</span>
+            {% if row.job.schedule %} · {{ row.job.schedule }}{% endif %}
+            {% if row.job.criticality == 'HIGH' %} · <span class="font-bold text-red-500">HIGH</span>{% endif %}
+          </p>
+        </td>
+        {% for cell in row.cells %}
+          <td class="px-1.5 py-2 text-center {% if cell.day == today %}bg-indigo-50/50{% endif %}">
+            {% include "operations/_run_cell.html" %}
+          </td>
+        {% endfor %}
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" class="px-5 py-12 text-center text-slate-400">
+        No jobs defined yet. {% if can_manage %}Add your Control-M jobs in the <a href="{% url 'job_master' %}" class="font-semibold text-indigo-600">Job master</a>, or import a runs CSV below — unknown jobs are created automatically.{% endif %}
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- CSV import -->
+<div class="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+  <form method="post" action="{% url 'job_run_import' %}" enctype="multipart/form-data" class="flex flex-wrap items-end gap-4">
+    {% csrf_token %}
+    <div class="min-w-[280px] flex-1">
+      <label class="mb-1 block text-sm font-medium text-slate-700">Import job runs (CSV)</label>
+      {{ csv_form.file }}
+      <p class="mt-1 text-xs text-slate-400">Bridge for Control-M exports until the API/mail integration is wired. Unknown job names are auto-created. <a href="{% url 'job_sample_csv' %}" class="font-semibold text-indigo-600">Download sample</a></p>
+    </div>
+    <button class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">Import</button>
+  </form>
+</div>
+{% endblock %}

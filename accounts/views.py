@@ -6,6 +6,7 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from leaves.models import LeaveRequest
+from operations.models import BatchJob, JobRun
 from reports.models import GeneratedReport, Ticket
 from workboard.models import Task
 
@@ -63,6 +64,12 @@ def dashboard(request):
 
     recent_reports = GeneratedReport.objects.select_related("created_by")[:5]
 
+    total_jobs = BatchJob.objects.filter(is_active=True).count()
+    runs_today = JobRun.objects.filter(run_date=today, job__is_active=True)
+    jobs_failed = runs_today.filter(status=JobRun.Status.FAILED).count()
+    jobs_success = runs_today.filter(status=JobRun.Status.SUCCESS).count()
+    jobs_pending = total_jobs - runs_today.count()
+
     return render(request, "dashboard.html", {
         "open_tickets": open_tickets,
         "resolved_week": resolved_week,
@@ -74,6 +81,10 @@ def dashboard(request):
         "max_load": max_load,
         "priority_map": priority_map,
         "recent_reports": recent_reports,
+        "total_jobs": total_jobs,
+        "jobs_failed": jobs_failed,
+        "jobs_success": jobs_success,
+        "jobs_pending": jobs_pending,
         "today": today,
     })
 

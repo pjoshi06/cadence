@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from accounts.models import Profile
 from leaves.models import LeaveRequest
+from operations.models import BatchJob, JobRun
 from reports.models import Ticket
 from roster.models import Shift, ShiftAssignment
 from workboard.models import Task
@@ -167,5 +168,52 @@ class Command(BaseCommand):
                             )
                             count += 1
             self.stdout.write(f"Roster: {count} shift assignments seeded (this week + next)")
+
+        if not BatchJob.objects.exists():
+            jobs_spec = [
+                ("INFRA_BACKUP_PROD", "INFRA", "HIGH", "Daily 01:00", "PRD-CLUS-01"),
+                ("INFRA_LOG_ARCHIVE", "INFRA", "LOW", "Daily 03:30", "PRD-CLUS-01"),
+                ("INFRA_DISK_CLEANUP", "INFRA", "MEDIUM", "Daily 04:00", "PRD-CLUS-02"),
+                ("INFRA_HEALTHCHECK_AM", "INFRA", "MEDIUM", "Daily 06:00", "PRD-CLUS-01"),
+                ("DWH_NIGHTLY_LOAD", "PIPELINE", "HIGH", "Daily 02:00", "DWH-CLUS"),
+                ("DWH_DIM_REFRESH", "PIPELINE", "MEDIUM", "Daily 02:45", "DWH-CLUS"),
+                ("FIN_INTERFACE_SAP", "PIPELINE", "HIGH", "Daily 23:30", "PRD-CLUS-01"),
+                ("CRM_DELTA_SYNC", "PIPELINE", "MEDIUM", "Hourly 06-22", "PRD-CLUS-02"),
+                ("MDM_CUSTOMER_MERGE", "PIPELINE", "MEDIUM", "Daily 05:00", "MDM-CLUS"),
+                ("RPT_SALES_EXTRACT", "PIPELINE", "LOW", "Daily 05:30", "DWH-CLUS"),
+                ("RPT_REGULATORY_FEED", "PIPELINE", "HIGH", "Mon-Fri 06:30", "DWH-CLUS"),
+                ("ARCHIVE_PURGE_MONTHLY", "PIPELINE", "LOW", "1st of month 02:00", "PRD-CLUS-02"),
+            ]
+            for name, cat, crit, sched, cluster in jobs_spec:
+                BatchJob.objects.create(name=name, category=cat, criticality=crit,
+                                        schedule=sched, cluster=cluster)
+            today = timezone.localdate()
+            fail_plan = {  # (job_name, days_ago): remarks
+                ("FIN_INTERFACE_SAP", 0): "Connection timeout to SAP PI - INC0010121",
+                ("DWH_NIGHTLY_LOAD", 2): "Source file arrived late - rerun OK next day",
+                ("INFRA_LOG_ARCHIVE", 4): "Mount point full - cleaned & rerun",
+                ("RPT_REGULATORY_FEED", 1): "Upstream data quality check failed",
+            }
+            runs = 0
+            for job in BatchJob.objects.all():
+                for days_ago in range(6, -1, -1):
+                    d = today - timedelta(days=days_ago)
+                    if "Mon-Fri" in job.schedule and d.weekday() >= 5:
+                        continue
+                    if "month" in job.schedule and d.day != 1:
+                        continue
+                    remarks = fail_plan.get((job.name, days_ago))
+                    if remarks:
+                        status = "FAILED"
+                    elif days_ago == 0 and job.name in ("CRM_DELTA_SYNC", "INFRA_HEALTHCHECK_AM"):
+                        status = "RUNNING"
+                        remarks = ""
+                    else:
+                        status = "SUCCESS"
+                        remarks = ""
+                    JobRun.objects.create(job=job, run_date=d, status=status,
+                                          remarks=remarks or "")
+                    runs += 1
+            self.stdout.write(f"Batch jobs: {BatchJob.objects.count()} jobs, {runs} runs seeded")
 
         self.stdout.write(self.style.SUCCESS("Demo data ready. Login: puneet / demo1234"))

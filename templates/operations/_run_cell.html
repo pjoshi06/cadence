@@ -1,0 +1,22 @@
+<div id="run-{{ cell.job.id }}-{{ cell.day|date:'Ymd' }}" class="inline-block" {% if cell.run and cell.run.remarks %}title="{{ cell.run.remarks }}"{% endif %}>
+  <select
+    hx-post="{% url 'job_run_set' %}"
+    hx-vals='{"job_id": "{{ cell.job.id }}", "date": "{{ cell.day|date:"Y-m-d" }}"}'
+    hx-target="#run-{{ cell.job.id }}-{{ cell.day|date:'Ymd' }}"
+    hx-swap="outerHTML"
+    name="status"
+    class="w-[64px] cursor-pointer appearance-none rounded-lg border px-1 py-1.5 text-center text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-300
+      {% if not cell.run %}border-dashed border-slate-200 bg-white text-slate-300
+      {% elif cell.run.status == 'SUCCESS' %}border-emerald-200 bg-emerald-50 text-emerald-700
+      {% elif cell.run.status == 'FAILED' %}border-red-300 bg-red-100 text-red-700
+      {% elif cell.run.status == 'RUNNING' %}border-sky-200 bg-sky-50 text-sky-700
+      {% else %}border-slate-200 bg-slate-100 text-slate-500{% endif %}">
+    <option value="" {% if not cell.run %}selected{% endif %}>—</option>
+    {% for value, label in cell.statuses %}
+      <option value="{{ value }}" {% if cell.run and cell.run.status == value %}selected{% endif %}>
+        {% if value == 'SUCCESS' %}✓{% elif value == 'FAILED' %}✗{% elif value == 'RUNNING' %}▶{% else %}○{% endif %} {{ label }}
+      </option>
+    {% endfor %}
+  </select>
+  {% if cell.run and cell.run.status == 'FAILED' and cell.run.remarks %}<p class="mt-0.5 w-[64px] truncate text-[9px] text-red-500">{{ cell.run.remarks }}</p>{% endif %}
+</div>
