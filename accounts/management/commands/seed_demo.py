@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from accounts.models import Profile
 from leaves.models import LeaveRequest
-from operations.models import BatchJob, JobRun
+from operations.models import BatchJob, ChangeEvent, ChangeRequest, JobRun
 from reports.models import Ticket
 from roster.models import Shift, ShiftAssignment
 from workboard.models import Task
@@ -215,5 +215,52 @@ class Command(BaseCommand):
                                           remarks=remarks or "")
                     runs += 1
             self.stdout.write(f"Batch jobs: {BatchJob.objects.count()} jobs, {runs} runs seeded")
+
+        if not ChangeRequest.objects.exists():
+            now = timezone.now()
+
+            def ev(cr, kind, days_ago, by, note="", sched=None):
+                ChangeEvent.objects.create(
+                    change=cr, kind=kind, by=by, note=note,
+                    scheduled_for=sched, at=now - timedelta(days=days_ago),
+                )
+
+            cr1 = ChangeRequest.objects.create(
+                cr_number="CHG0034551", title="Upgrade payment gateway adapter to v4.2",
+                affected_system="Payments", engineering_contact="Arjun Patel",
+                target_date=timezone.localdate() + timedelta(days=5),
+                reviewer=users["anita"], status="REVIEW_1", created_by=users["puneet"],
+            )
+            ev(cr1, "CREATED", 6, users["puneet"])
+            ev(cr1, "RUNBOOK_RECEIVED", 6, users["puneet"])
+            ev(cr1, "WT_SCHEDULED", 5, users["anita"], sched=now - timedelta(days=3))
+            ev(cr1, "WT_HELD", 3, users["anita"], "Rollback section needs more detail.")
+            ev(cr1, "REVIEW_1", 2, users["anita"],
+               "Sent review: add explicit rollback timings and DB backup step before deploy.")
+
+            cr2 = ChangeRequest.objects.create(
+                cr_number="CHG0034562", title="Archive job re-partitioning on DWH cluster",
+                affected_system="DWH", engineering_contact="Meera Iyer",
+                target_date=timezone.localdate() + timedelta(days=12),
+                reviewer=users["vikram"], status="WT_SCHEDULED", created_by=users["puneet"],
+            )
+            ev(cr2, "CREATED", 2, users["puneet"])
+            ev(cr2, "RUNBOOK_RECEIVED", 1, users["vikram"])
+            ev(cr2, "WT_SCHEDULED", 1, users["vikram"], sched=now + timedelta(days=2))
+
+            cr3 = ChangeRequest.objects.create(
+                cr_number="CHG0034538", title="TLS config hardening on vendor portal",
+                affected_system="Vendor Portal", engineering_contact="Arjun Patel",
+                target_date=timezone.localdate() - timedelta(days=2),
+                reviewer=users["anita"], status="APPROVED", created_by=users["puneet"],
+            )
+            ev(cr3, "CREATED", 10, users["puneet"])
+            ev(cr3, "RUNBOOK_RECEIVED", 10, users["puneet"])
+            ev(cr3, "WT_SCHEDULED", 9, users["anita"], sched=now - timedelta(days=8))
+            ev(cr3, "WT_HELD", 8, users["anita"])
+            ev(cr3, "REVIEW_1", 7, users["anita"], "Minor comments on cipher list.")
+            ev(cr3, "APPROVED", 4, users["puneet"], "Approved for implementation window Sat 02:00.")
+
+            self.stdout.write("Changes: 3 seeded with event timelines")
 
         self.stdout.write(self.style.SUCCESS("Demo data ready. Login: puneet / demo1234"))

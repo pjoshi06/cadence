@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}{{ cr.cr_number }} · Cadence{% endblock %}
+{% block page_title %}{{ cr.cr_number }}{% endblock %}
+{% block page_subtitle %}{{ cr.title }}{% endblock %}
+{% block header_actions %}
+  <a href="{% url 'change_list' %}" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">← All changes</a>
+  <a href="{% url 'change_edit' cr.pk %}" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Edit</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+
+  <!-- Left: details + timeline -->
+  <div class="space-y-6 xl:col-span-2">
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="mb-4 flex flex-wrap items-center gap-3">
+        <span class="rounded-full px-3 py-1 text-xs font-bold
+          {% if cr.status == 'APPROVED' %}bg-emerald-100 text-emerald-700
+          {% elif cr.status == 'REJECTED' %}bg-red-100 text-red-700
+          {% elif cr.status == 'REVIEW_1' or cr.status == 'REVIEW_2' %}bg-indigo-100 text-indigo-700
+          {% elif cr.status == 'WT_SCHEDULED' or cr.status == 'WT_HELD' %}bg-violet-100 text-violet-700
+          {% else %}bg-sky-100 text-sky-700{% endif %}">{{ cr.get_status_display }}</span>
+        {% if cr.is_open %}<span class="text-xs text-slate-400">{{ cr.days_in_stage }}d in this stage · {{ cr.age_days }}d total</span>{% endif %}
+      </div>
+      <dl class="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+        <div><dt class="text-xs font-semibold uppercase text-slate-400">Affected system</dt><dd class="mt-0.5 font-medium">{{ cr.affected_system|default:"—" }}</dd></div>
+        <div><dt class="text-xs font-semibold uppercase text-slate-400">Engineering contact</dt><dd class="mt-0.5 font-medium">{{ cr.engineering_contact|default:"—" }}</dd></div>
+        <div><dt class="text-xs font-semibold uppercase text-slate-400">Target date</dt><dd class="mt-0.5 font-medium">{{ cr.target_date|date:"d M Y"|default:"—" }}</dd></div>
+        <div><dt class="text-xs font-semibold uppercase text-slate-400">AMS reviewer</dt><dd class="mt-0.5 font-medium">{{ cr.reviewer.get_full_name|default:"Unassigned" }}</dd></div>
+        <div>
+          <dt class="text-xs font-semibold uppercase text-slate-400">Runbook</dt>
+          <dd class="mt-0.5">
+            {% if cr.runbook %}<a href="{{ cr.runbook.url }}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Download ↓</a>
+            {% else %}<span class="text-slate-400">Not uploaded</span>{% endif %}
+          </dd>
+        </div>
+        <div><dt class="text-xs font-semibold uppercase text-slate-400">Registered by</dt><dd class="mt-0.5 font-medium">{{ cr.created_by.get_full_name|default:cr.created_by.username }} · {{ cr.created_at|date:"d M Y" }}</dd></div>
+      </dl>
+      {% if cr.description %}<p class="mt-4 border-t border-slate-100 pt-4 text-sm leading-relaxed text-slate-600">{{ cr.description|linebreaksbr }}</p>{% endif %}
+
+      {% if cr.first_review_turnaround_days is not None or cr.total_cycle_days is not None %}
+      <div class="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+        {% if cr.first_review_turnaround_days is not None %}
+        <span class="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700">Runbook → first review: {{ cr.first_review_turnaround_days }}d</span>
+        {% endif %}
+        {% if cr.total_cycle_days is not None %}
+        <span class="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">Total cycle: {{ cr.total_cycle_days }}d</span>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Timeline -->
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h2 class="mb-4 text-sm font-bold">Timeline</h2>
+      <ol class="relative ml-3 space-y-5 border-l-2 border-slate-100 pl-6">
+        {% for ev in events %}
+        <li class="relative">
+          <span class="absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-white
+            {% if ev.kind == 'APPROVED' %}bg-emerald-500
+            {% elif ev.kind == 'REJECTED' %}bg-red-500
+            {% elif ev.kind == 'COMMENT' %}bg-slate-300
+            {% elif ev.kind == 'REVIEW_1' or ev.kind == 'REVIEW_2' %}bg-indigo-500
+            {% elif ev.kind == 'WT_SCHEDULED' or ev.kind == 'WT_HELD' %}bg-violet-500
+            {% else %}bg-sky-500{% endif %}"></span>
+          <p class="text-sm font-semibold">{{ ev.get_kind_display }}
+            {% if ev.scheduled_for %}<span class="font-normal text-slate-500">for {{ ev.scheduled_for|date:"d M Y H:i" }}</span>{% endif %}
+          </p>
+          <p class="text-xs text-slate-400">{{ ev.by.get_full_name|default:ev.by.username }} · {{ ev.at|date:"d M Y H:i" }}</p>
+          {% if ev.note %}<p class="mt-1 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">{{ ev.note|linebreaksbr }}</p>{% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+    </div>
+  </div>
+
+  <!-- Right: actions -->
+  <div class="space-y-4">
+    {% if next_actions %}
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h2 class="mb-4 text-sm font-bold">Record progress</h2>
+      <div class="space-y-3">
+        {% for kind, label in next_actions %}
+        <form method="post" action="{% url 'change_action' cr.pk %}" class="rounded-lg border border-slate-100 bg-slate-50 p-3">
+          {% csrf_token %}
+          <input type="hidden" name="kind" value="{{ kind }}">
+          {% if kind == 'WT_SCHEDULED' %}
+            <label class="mb-1 block text-xs font-medium text-slate-500">Walkthrough date & time</label>
+            <input type="datetime-local" name="scheduled_for" required
+                   class="mb-2 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none">
+          {% endif %}
+          {% if kind == 'REVIEW_1' or kind == 'REVIEW_2' %}
+            <textarea name="note" rows="2" placeholder="Review summary sent to engineering…"
+                      class="mb-2 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none"></textarea>
+          {% endif %}
+          <button class="w-full rounded-lg bg-indigo-600 py-2 text-sm font-semibold text-white hover:bg-indigo-700">{{ label }}</button>
+        </form>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h2 class="mb-3 text-sm font-bold">Decision</h2>
+      <form method="post" action="{% url 'change_action' cr.pk %}" class="space-y-2">
+        {% csrf_token %}
+        <textarea name="note" rows="2" placeholder="Decision note (optional)…"
+                  class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none"></textarea>
+        <div class="flex gap-2">
+          <button name="kind" value="APPROVED" class="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Approve</button>
+          <button name="kind" value="REJECTED" class="flex-1 rounded-lg border border-red-300 bg-white py-2 text-sm font-semibold text-red-600 hover:bg-red-50">Reject</button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h2 class="mb-3 text-sm font-bold">Add comment</h2>
+      <form method="post" action="{% url 'change_action' cr.pk %}" class="space-y-2">
+        {% csrf_token %}
+        <input type="hidden" name="kind" value="COMMENT">
+        <textarea name="note" rows="3" required placeholder="e.g. Engineering to update rollback steps…"
+                  class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none"></textarea>
+        <button class="w-full rounded-lg border border-slate-300 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Post comment</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

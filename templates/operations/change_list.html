@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Change Reviews · Cadence{% endblock %}
+{% block page_title %}Change Reviews{% endblock %}
+{% block page_subtitle %}Engineering changes under AMS review — runbooks, walkthroughs and approvals{% endblock %}
+{% block header_actions %}
+  <a href="{% url 'change_add' %}" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">+ Register change</a>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4 flex flex-wrap items-center gap-3">
+  <span class="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-bold text-sky-700">{{ open_count }} in review</span>
+  <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">{{ approved_count }} approved</span>
+  {% if avg_turnaround is not None %}
+  <span class="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700">Avg first-review turnaround: {{ avg_turnaround }}d</span>
+  {% endif %}
+  <div class="ml-auto flex items-center gap-2 text-sm">
+    <a href="?state=open" class="rounded-full px-3 py-1.5 font-semibold {% if sel_state == 'open' %}bg-indigo-600 text-white{% else %}bg-white text-slate-600 border border-slate-200 hover:bg-slate-50{% endif %}">Open</a>
+    <a href="?state=closed" class="rounded-full px-3 py-1.5 font-semibold {% if sel_state == 'closed' %}bg-indigo-600 text-white{% else %}bg-white text-slate-600 border border-slate-200 hover:bg-slate-50{% endif %}">Decided</a>
+    <a href="?state=all" class="rounded-full px-3 py-1.5 font-semibold {% if sel_state == 'all' %}bg-indigo-600 text-white{% else %}bg-white text-slate-600 border border-slate-200 hover:bg-slate-50{% endif %}">All</a>
+  </div>
+</div>
+
+<div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+  <table class="min-w-full divide-y divide-slate-200 text-sm">
+    <thead class="bg-slate-50">
+      <tr class="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <th class="px-5 py-3">Change</th>
+        <th class="px-5 py-3">System</th>
+        <th class="px-5 py-3">Engineering contact</th>
+        <th class="px-5 py-3">Target date</th>
+        <th class="px-5 py-3">Reviewer</th>
+        <th class="px-5 py-3">Status</th>
+        <th class="px-5 py-3">In stage</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for c in changes %}
+      <tr class="cursor-pointer hover:bg-slate-50" onclick="window.location='{% url 'change_detail' c.pk %}'">
+        <td class="px-5 py-3">
+          <p class="font-mono text-xs font-bold text-indigo-600">{{ c.cr_number }}</p>
+          <p class="max-w-[280px] truncate font-medium">{{ c.title }}</p>
+        </td>
+        <td class="px-5 py-3 text-slate-600">{{ c.affected_system|default:"—" }}</td>
+        <td class="px-5 py-3 text-slate-600">{{ c.engineering_contact|default:"—" }}</td>
+        <td class="px-5 py-3 {% if c.is_open and c.target_date and c.target_date <= today %}font-bold text-red-600{% else %}text-slate-600{% endif %}">{{ c.target_date|date:"d M Y"|default:"—" }}</td>
+        <td class="px-5 py-3 text-slate-600">{{ c.reviewer.get_full_name|default:"Unassigned" }}</td>
+        <td class="px-5 py-3">
+          <span class="rounded-full px-2.5 py-1 text-xs font-semibold
+            {% if c.status == 'APPROVED' %}bg-emerald-100 text-emerald-700
+            {% elif c.status == 'REJECTED' %}bg-red-100 text-red-700
+            {% elif c.status == 'REVIEW_1' or c.status == 'REVIEW_2' %}bg-indigo-100 text-indigo-700
+            {% elif c.status == 'WT_SCHEDULED' or c.status == 'WT_HELD' %}bg-violet-100 text-violet-700
+            {% else %}bg-sky-100 text-sky-700{% endif %}">{{ c.get_status_display }}</span>
+        </td>
+        <td class="px-5 py-3 {% if c.is_open and c.days_in_stage > 3 %}font-bold text-amber-600{% else %}text-slate-600{% endif %}">
+          {% if c.is_open %}{{ c.days_in_stage }}d{% else %}—{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="px-5 py-12 text-center text-slate-400">
+        No changes here. Use “Register change” when engineering hands over the next CR.
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

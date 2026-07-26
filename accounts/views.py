@@ -6,7 +6,7 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from leaves.models import LeaveRequest
-from operations.models import BatchJob, JobRun
+from operations.models import BatchJob, ChangeRequest, JobRun
 from reports.models import GeneratedReport, Ticket
 from workboard.models import Task
 
@@ -69,6 +69,9 @@ def dashboard(request):
     jobs_failed = runs_today.filter(status=JobRun.Status.FAILED).count()
     jobs_success = runs_today.filter(status=JobRun.Status.SUCCESS).count()
     jobs_pending = total_jobs - runs_today.count()
+    open_changes = ChangeRequest.objects.filter(
+        status__in=ChangeRequest.OPEN_STATUSES
+    ).count()
 
     return render(request, "dashboard.html", {
         "open_tickets": open_tickets,
@@ -85,6 +88,7 @@ def dashboard(request):
         "jobs_failed": jobs_failed,
         "jobs_success": jobs_success,
         "jobs_pending": jobs_pending,
+        "open_changes": open_changes,
         "today": today,
     })
 

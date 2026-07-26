@@ -1,8 +1,13 @@
 from django.urls import path
 
-from . import views
+from . import views, views_changes
 
 urlpatterns = [
+    path("changes/", views_changes.change_list, name="change_list"),
+    path("changes/add/", views_changes.change_form, name="change_add"),
+    path("changes/<int:pk>/", views_changes.change_detail, name="change_detail"),
+    path("changes/<int:pk>/edit/", views_changes.change_form, name="change_edit"),
+    path("changes/<int:pk>/action/", views_changes.change_action, name="change_action"),
     path("jobs/", views.job_board, name="job_board"),
     path("jobs/set/", views.run_set, name="job_run_set"),
     path("jobs/mark-rest/", views.mark_rest_success, name="job_mark_rest"),

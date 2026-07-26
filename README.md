@@ -33,6 +33,7 @@ venv\Scripts\python manage.py seed_demo   # optional demo data
 | Leaves | Apply / approve / reject (HTMX), month calendar of team availability |
 | Shift Roster | Weekly members × days grid with colour-coded shifts, inline HTMX editing for managers, ⚠ flags on approved-leave days, per-day coverage counts, copy-last-week, week navigation |
 | Shift Master | Manager-only screen (Admin → Shift Master) to create/edit shifts — code, name, timings, colour, active flag. Shifts used on rosters are deactivated instead of deleted so history is preserved; only active shifts are offered when assigning |
+| Change Reviews | Tracks engineering changes through AMS review: runbook handover, walkthrough scheduling, first/second reviews, approval — each step timestamped with who did it. Runbook file upload, reviewer assignment, turnaround metrics (runbook → first review, total cycle), and a "Change Management" slide in report decks |
 | Batch Health | Control-M job monitoring: Job Master (name, category, criticality, schedule, cluster) + 7-day status grid with inline HTMX updates, failures-today banner with remarks/INC refs, "mark rest success" for the morning check, runs CSV import (auto-creates unknown jobs), dashboard tile, and an automatic "Batch Job Status" slide in DSR/WSR/MSR decks |
 | Reports | Generate DSR/WSR/MSR `.pptx` from ticket data + manager highlights; report history with downloads |
 | PPT Templates | Upload client-approved `.pptx` templates (branding is kept, report slides are appended); a built-in neutral default template always available |

@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from django.db import models
 
+from .models_changes import ChangeEvent, ChangeRequest  # noqa: F401
+
 
 class BatchJob(models.Model):
     class Category(models.TextChoices):

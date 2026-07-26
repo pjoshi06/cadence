@@ -8,6 +8,7 @@ Works in two modes:
 import io
 from datetime import datetime, time, timedelta
 
+from django.db import models
 from django.utils import timezone
 from pptx import Presentation
 from pptx.dml.color import RGBColor
@@ -401,6 +402,61 @@ def _batch_slide(prs, period_start, period_end, period_label, branded):
                      "No batch job failures in this period. ✓", 13, GOOD, bold=True)
 
 
+def _changes_slide(prs, period_start, period_end, period_label, branded):
+    from operations.models import ChangeEvent, ChangeRequest
+
+    if not ChangeRequest.objects.exists():
+        return
+    tz = timezone.get_current_timezone()
+    start_dt = timezone.make_aware(datetime.combine(period_start, time.min), tz)
+    end_dt = timezone.make_aware(datetime.combine(period_end, time.max), tz)
+
+    active_ids = set(ChangeEvent.objects.filter(
+        at__range=(start_dt, end_dt)).values_list("change_id", flat=True))
+    changes = list(ChangeRequest.objects.filter(
+        models.Q(id__in=active_ids) | models.Q(status__in=ChangeRequest.OPEN_STATUSES)
+    ).distinct())
+    if not changes:
+        return
+
+    slide = _add_slide(prs)
+    _header(slide, prs, "Change Management", period_label, branded)
+    margin = Inches(0.5)
+
+    approved = sum(1 for c in changes if c.status == "APPROVED" and c.decided_at
+                   and start_dt <= c.decided_at <= end_dt)
+    rejected = sum(1 for c in changes if c.status == "REJECTED" and c.decided_at
+                   and start_dt <= c.decided_at <= end_dt)
+    in_review = sum(1 for c in changes if c.is_open)
+
+    cards = [
+        ("In Review", str(in_review), ACCENT),
+        ("Approved (period)", str(approved), GOOD),
+        ("Rejected (period)", str(rejected), BAD if rejected else MUTED),
+    ]
+    gap = Inches(0.25)
+    card_w = int((prs.slide_width - margin * 2 - gap * 2) / 3)
+    for i, (label, value, color) in enumerate(cards):
+        _kpi_card(slide, margin + i * (card_w + gap), Inches(1.35), card_w,
+                  Inches(1.2), label, value, color)
+
+    show = changes[:12]
+    table = _add_table(slide, len(show) + 1, 5, margin, Inches(2.85),
+                       prs.slide_width - margin * 2,
+                       Inches(0.32) * (len(show) + 1))
+    for c_i, htxt in enumerate(["CR", "Title", "System", "Status", "Target"]):
+        _set_cell(table, 0, c_i, htxt)
+    status_colors = {"APPROVED": GOOD, "REJECTED": BAD}
+    for r, c in enumerate(show, start=1):
+        _set_cell(table, r, 0, c.cr_number)
+        _set_cell(table, r, 1, c.title[:45] + ("…" if len(c.title) > 45 else ""))
+        _set_cell(table, r, 2, c.affected_system or "—")
+        _set_cell(table, r, 3, c.get_status_display(), bold=True,
+                  color=status_colors.get(c.status, ACCENT))
+        _set_cell(table, r, 4, c.target_date.strftime("%d %b") if c.target_date else "—")
+    _style_table(table)
+
+
 def _highlights_slide(prs, highlights, period_label, branded):
     slide = _add_slide(prs)
     _header(slide, prs, "Highlights & Manager Notes", period_label, branded)
@@ -460,6 +516,7 @@ def build_report(report_type, period_start, period_end, template_path=None,
     _ageing_slide(prs, m, period_label, branded)
     _resolved_slide(prs, m, period_label, branded)
     _batch_slide(prs, period_start, period_end, period_label, branded)
+    _changes_slide(prs, period_start, period_end, period_label, branded)
     _highlights_slide(prs, highlights, period_label, branded)
 
     buf = io.BytesIO()

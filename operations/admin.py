@@ -1,6 +1,19 @@
 from django.contrib import admin
 
-from .models import BatchJob, JobRun
+from .models import BatchJob, ChangeEvent, ChangeRequest, JobRun
+
+
+class ChangeEventInline(admin.TabularInline):
+    model = ChangeEvent
+    extra = 0
+
+
+@admin.register(ChangeRequest)
+class ChangeRequestAdmin(admin.ModelAdmin):
+    list_display = ("cr_number", "title", "status", "reviewer", "target_date")
+    list_filter = ("status",)
+    search_fields = ("cr_number", "title")
+    inlines = [ChangeEventInline]
 
 
 @admin.register(BatchJob)
