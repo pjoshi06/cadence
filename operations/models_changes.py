@@ -21,8 +21,8 @@ class ChangeRequest(models.Model):
     description = models.TextField(blank=True)
     engineering_contact = models.CharField(max_length=100, blank=True)
     affected_system = models.CharField(max_length=100, blank=True)
-    target_date = models.DateField(null=True, blank=True,
-                                   help_text="Planned implementation date")
+    target_date = models.DateField("Implementation date", null=True, blank=True,
+                                   help_text="Planned implementation / deployment date")
     runbook = models.FileField(upload_to="runbooks/", null=True, blank=True)
     reviewer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
                                  related_name="assigned_changes")
@@ -52,6 +52,19 @@ class ChangeRequest(models.Model):
     @property
     def first_review_at(self):
         return self._event_at(ChangeEvent.Kind.REVIEW_1)
+
+    @property
+    def second_review_at(self):
+        return self._event_at(ChangeEvent.Kind.REVIEW_2)
+
+    @property
+    def walkthrough_held_at(self):
+        return self._event_at(ChangeEvent.Kind.WT_HELD)
+
+    @property
+    def walkthrough_scheduled_for(self):
+        ev = self.events.filter(kind=ChangeEvent.Kind.WT_SCHEDULED).order_by("-at").first()
+        return ev.scheduled_for if ev else None
 
     @property
     def decided_at(self):
@@ -112,7 +125,10 @@ class ChangeEvent(models.Model):
     scheduled_for = models.DateTimeField(null=True, blank=True,
                                          help_text="Walkthrough date/time")
     by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    at = models.DateTimeField(default=timezone.now)
+    at = models.DateTimeField(default=timezone.now,
+                              help_text="When the milestone actually happened")
+    recorded_at = models.DateTimeField(auto_now_add=True, null=True,
+                                       help_text="When it was entered in the portal")
 
     class Meta:
         ordering = ["at"]

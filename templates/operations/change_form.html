@@ -20,15 +20,23 @@
       <div class="sm:col-span-2"><label class="mb-1 block text-sm font-medium text-slate-700">Title</label>{{ form.title }}{{ form.title.errors }}</div>
       <div class="sm:col-span-2"><label class="mb-1 block text-sm font-medium text-slate-700">Description</label>{{ form.description }}</div>
       <div><label class="mb-1 block text-sm font-medium text-slate-700">Engineering contact</label>{{ form.engineering_contact }}</div>
-      <div><label class="mb-1 block text-sm font-medium text-slate-700">Target implementation date</label>{{ form.target_date }}</div>
+      <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700">Implementation date</label>{{ form.target_date }}
+        <p class="mt-1 text-xs text-slate-400">{{ form.target_date.help_text }}</p>
+      </div>
       <div>
         <label class="mb-1 block text-sm font-medium text-slate-700">Runbook file</label>{{ form.runbook }}
         <p class="mt-1 text-xs text-slate-400">Word / PDF / any format engineering shares.</p>
       </div>
       <div><label class="mb-1 block text-sm font-medium text-slate-700">AMS reviewer</label>{{ form.reviewer }}</div>
       {% if form.runbook_already_received %}
-      <div class="sm:col-span-2">
+      <div class="flex items-end pb-2">
         <label class="flex items-center gap-2 text-sm text-slate-700">{{ form.runbook_already_received }} {{ form.runbook_already_received.label }}</label>
+      </div>
+      <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700">{{ form.runbook_handover_date.label }}</label>
+        {{ form.runbook_handover_date }}
+        <p class="mt-1 text-xs text-slate-400">{{ form.runbook_handover_date.help_text }} Leave blank for today.</p>
       </div>
       {% endif %}
     </div>

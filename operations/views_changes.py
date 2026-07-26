@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime, time
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -7,6 +7,13 @@ from django.utils import timezone
 
 from .forms import ChangeRequestForm
 from .models import ChangeEvent, ChangeRequest
+
+
+def _occurred_at(d):
+    """Timestamp for a milestone that happened on date d (now if today)."""
+    if d is None or d == timezone.localdate():
+        return timezone.now()
+    return timezone.make_aware(datetime.combine(d, time(12, 0)))
 
 
 def _next_actions(cr):
@@ -69,9 +76,11 @@ def change_form(request, pk=None):
             ChangeEvent.objects.create(change=cr, kind=ChangeEvent.Kind.CREATED,
                                        by=request.user)
             if form.cleaned_data.get("runbook_already_received"):
+                handover = form.cleaned_data.get("runbook_handover_date")
                 ChangeEvent.objects.create(change=cr,
                                            kind=ChangeEvent.Kind.RUNBOOK_RECEIVED,
-                                           by=request.user)
+                                           by=request.user,
+                                           at=_occurred_at(handover))
         messages.success(request, f"Change {cr.cr_number} saved.")
         return redirect("change_detail", pk=cr.pk)
     return render(request, "operations/change_form.html", {"form": form, "instance": instance})
@@ -84,6 +93,7 @@ def change_detail(request, pk):
         "cr": cr,
         "events": cr.events.select_related("by"),
         "next_actions": _next_actions(cr),
+        "today": timezone.localdate(),
     })
 
 
@@ -105,9 +115,18 @@ def change_action(request, pk):
         except ValueError:
             scheduled_for = None
 
+    occurred_on = None
+    raw_date = request.POST.get("occurred_on", "").strip()
+    if raw_date:
+        try:
+            occurred_on = date.fromisoformat(raw_date)
+        except ValueError:
+            occurred_on = None
+
     ChangeEvent.objects.create(
         change=cr, kind=kind, note=request.POST.get("note", "").strip(),
         scheduled_for=scheduled_for, by=request.user,
+        at=_occurred_at(occurred_on),
     )
     new_status = ChangeEvent.STATUS_MAP.get(kind)
     if new_status:

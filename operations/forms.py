@@ -17,6 +17,12 @@ class ChangeRequestForm(StyledModelForm):
         required=False, initial=True,
         label="Runbook was handed over with this change",
     )
+    runbook_handover_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date"}),
+        label="Runbook handover date",
+        help_text="When engineering actually handed the runbook to AMS.",
+    )
 
     class Meta:
         model = ChangeRequest
@@ -35,6 +41,7 @@ class ChangeRequestForm(StyledModelForm):
         )
         if self.instance.pk:
             self.fields.pop("runbook_already_received")
+            self.fields.pop("runbook_handover_date")
 
 
 class RunCSVForm(forms.Form):
