@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{% if instance %}Edit task{% else %}New task{% endif %} · Cadence{% endblock %}
+{% block page_title %}{% if instance %}Edit task{% else %}New task{% endif %}{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-2xl">
+  <form method="post" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    {% csrf_token %}
+    <div class="space-y-4">
+      <div><label class="mb-1 block text-sm font-medium text-slate-700">Title</label>{{ form.title }}{{ form.title.errors }}</div>
+      <div><label class="mb-1 block text-sm font-medium text-slate-700">Description</label>{{ form.description }}</div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div><label class="mb-1 block text-sm font-medium text-slate-700">Assignee</label>{{ form.assignee }}{{ form.assignee.errors }}</div>
+        <div><label class="mb-1 block text-sm font-medium text-slate-700">Priority</label>{{ form.priority }}</div>
+        <div><label class="mb-1 block text-sm font-medium text-slate-700">Status</label>{{ form.status }}</div>
+        <div><label class="mb-1 block text-sm font-medium text-slate-700">Ticket ref (optional)</label>{{ form.ticket_ref }}</div>
+        <div><label class="mb-1 block text-sm font-medium text-slate-700">Due date</label>{{ form.due_date }}</div>
+      </div>
+    </div>
+    <div class="mt-8 flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
+      <a href="{% url 'task_list' %}" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</a>
+      <button class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">Save task</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

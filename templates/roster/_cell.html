@@ -1,0 +1,31 @@
+<div id="cell-{{ cell.member.id }}-{{ cell.day|date:'Ymd' }}" class="inline-block">
+  {% if cell.can_edit %}
+    <select
+      hx-post="{% url 'roster_set_shift' %}"
+      hx-vals='{"user_id": "{{ cell.member.id }}", "date": "{{ cell.day|date:"Y-m-d" }}"}'
+      hx-target="#cell-{{ cell.member.id }}-{{ cell.day|date:'Ymd' }}"
+      hx-swap="outerHTML"
+      name="shift"
+      class="w-[72px] cursor-pointer appearance-none rounded-lg border px-1.5 py-1.5 text-center text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-300
+        {% if cell.on_leave %}border-amber-300 bg-amber-50 text-amber-700
+        {% elif cell.assignment %}{{ cell.assignment.shift.badge_classes }}
+        {% else %}border-dashed border-slate-200 bg-white text-slate-300{% endif %}">
+      <option value="" {% if not cell.assignment %}selected{% endif %}>{% if cell.on_leave %}⚠ —{% else %}—{% endif %}</option>
+      {% for s in cell.shifts %}
+        <option value="{{ s.id }}" {% if cell.assignment and cell.assignment.shift_id == s.id %}selected{% endif %}>
+          {% if cell.on_leave %}⚠ {% endif %}{{ s.code }}
+        </option>
+      {% endfor %}
+    </select>
+  {% else %}
+    {% if cell.assignment %}
+      <span class="inline-block w-[72px] rounded-lg border px-1.5 py-1.5 text-xs font-bold {% if cell.on_leave %}border-amber-300 bg-amber-50 text-amber-700{% else %}{{ cell.assignment.shift.badge_classes }}{% endif %}">
+        {% if cell.on_leave %}⚠ {% endif %}{{ cell.assignment.shift.code }}
+      </span>
+    {% elif cell.on_leave %}
+      <span class="inline-block w-[72px] rounded-lg border border-amber-300 bg-amber-50 px-1.5 py-1.5 text-xs font-bold text-amber-700">Leave</span>
+    {% else %}
+      <span class="inline-block w-[72px] rounded-lg border border-dashed border-slate-200 px-1.5 py-1.5 text-xs text-slate-300">—</span>
+    {% endif %}
+  {% endif %}
+</div>

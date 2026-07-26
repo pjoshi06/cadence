@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}PPT Templates · Cadence{% endblock %}
+{% block page_title %}PPT Templates{% endblock %}
+{% block page_subtitle %}Client-approved decks used as the base for generated reports{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+  <div>
+    <form method="post" enctype="multipart/form-data" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      {% csrf_token %}
+      <h2 class="mb-5 text-sm font-bold">Upload a template</h2>
+      <div class="space-y-4">
+        <div><label class="mb-1 block text-sm font-medium text-slate-700">Template name</label>{{ form.name }}{{ form.name.errors }}</div>
+        <div><label class="mb-1 block text-sm font-medium text-slate-700">Client name</label>{{ form.client_name }}</div>
+        <div>
+          <label class="mb-1 block text-sm font-medium text-slate-700">.pptx file</label>{{ form.file }}{{ form.file.errors }}
+          <p class="mt-1 text-xs text-slate-400">The client's branding (slide master, logo, colours) is kept; report slides are appended using it.</p>
+        </div>
+        <label class="flex items-center gap-2 text-sm text-slate-700">{{ form.is_client_approved }} Client-approved template</label>
+      </div>
+      <button class="mt-6 w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">Upload</button>
+    </form>
+
+    <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs leading-relaxed text-slate-600">
+      <p class="font-bold text-slate-700">No template? No problem.</p>
+      <p class="mt-1">A <span class="font-semibold">built-in default template</span> (clean, neutral branding) is always available in the report generator — useful on this machine since client files stay on your official laptop.</p>
+    </div>
+  </div>
+
+  <div class="xl:col-span-2">
+    <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div class="border-b border-slate-100 px-5 py-4"><h2 class="text-sm font-bold">Uploaded templates</h2></div>
+      <table class="min-w-full divide-y divide-slate-100 text-sm">
+        <thead class="bg-slate-50">
+          <tr class="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <th class="px-5 py-2.5">Name</th><th class="px-5 py-2.5">Client</th><th class="px-5 py-2.5">Status</th><th class="px-5 py-2.5">Uploaded</th><th class="px-5 py-2.5"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <tr class="bg-indigo-50/40">
+            <td class="px-5 py-3 font-semibold">Built-in default</td>
+            <td class="px-5 py-3 text-slate-500">—</td>
+            <td class="px-5 py-3"><span class="rounded-full bg-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600">Internal / neutral</span></td>
+            <td class="px-5 py-3 text-slate-400">Ships with the portal</td>
+            <td class="px-5 py-3"></td>
+          </tr>
+          {% for t in templates %}
+          <tr class="hover:bg-slate-50">
+            <td class="px-5 py-3 font-semibold">{{ t.name }}</td>
+            <td class="px-5 py-3 text-slate-600">{{ t.client_name|default:"—" }}</td>
+            <td class="px-5 py-3">
+              {% if t.is_client_approved %}<span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">Client-approved</span>
+              {% else %}<span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">Draft / internal</span>{% endif %}
+            </td>
+            <td class="px-5 py-3 text-slate-500">{{ t.uploaded_at|date:"d M Y" }}<br><span class="text-xs text-slate-400">{{ t.uploaded_by.get_full_name|default:t.uploaded_by.username }}</span></td>
+            <td class="px-5 py-3 text-right">
+              <div class="flex items-center justify-end gap-3">
+                <a href="{{ t.file.url }}" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Download</a>
+                <form method="post" action="{% url 'template_delete' t.pk %}" onsubmit="return confirm('Delete this template?');">
+                  {% csrf_token %}
+                  <button class="text-xs font-semibold text-slate-400 hover:text-red-600">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

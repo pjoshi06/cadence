@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Tasks · Cadence{% endblock %}
+{% block page_title %}Tasks{% endblock %}
+{% block page_subtitle %}Day-to-day work across the team — tickets and non-ticket work{% endblock %}
+{% block header_actions %}
+  <a href="{% url 'task_add' %}" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">+ New task</a>
+{% endblock %}
+
+{% block content %}
+<form id="filters" class="mb-4 flex flex-wrap items-center gap-3"
+      hx-get="{% url 'task_list' %}" hx-target="#task-table" hx-trigger="change" hx-push-url="true">
+  <select name="assignee" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+    <option value="">All members</option>
+    <option value="me" {% if sel_assignee == 'me' %}selected{% endif %}>My tasks</option>
+    {% for m in members %}
+      <option value="{{ m.id }}" {% if sel_assignee == m.id|stringformat:"s" %}selected{% endif %}>{{ m.get_full_name|default:m.username }}</option>
+    {% endfor %}
+  </select>
+  <select name="status" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+    <option value="">All statuses</option>
+    {% for value, label in statuses %}
+      <option value="{{ value }}" {% if sel_status == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<div id="task-table">
+  {% include "workboard/_task_table.html" %}
+</div>
+{% endblock %}

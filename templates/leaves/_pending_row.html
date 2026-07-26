@@ -1,0 +1,24 @@
+<div class="flex items-center justify-between px-5 py-3" id="leave-{{ lv.pk }}">
+  <div class="flex items-center gap-3">
+    <div class="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">{{ lv.user.profile.initials }}</div>
+    <div>
+      <p class="text-sm font-semibold">{{ lv.user.get_full_name|default:lv.user.username }}</p>
+      <p class="text-xs text-slate-500">
+        {{ lv.get_leave_type_display }} · {{ lv.start_date|date:"d M" }} – {{ lv.end_date|date:"d M Y" }} ({{ lv.days }}d)
+        {% if lv.reason %} · “{{ lv.reason }}”{% endif %}
+      </p>
+    </div>
+  </div>
+  {% if decided %}
+    <span class="rounded-full px-3 py-1 text-xs font-bold {% if lv.status == 'APPROVED' %}bg-emerald-100 text-emerald-700{% else %}bg-red-100 text-red-700{% endif %}">
+      {{ lv.get_status_display }}
+    </span>
+  {% else %}
+    <div class="flex gap-2">
+      <button hx-post="{% url 'leave_decide' lv.pk 'approve' %}" hx-target="#leave-{{ lv.pk }}" hx-swap="outerHTML"
+              class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">Approve</button>
+      <button hx-post="{% url 'leave_decide' lv.pk 'reject' %}" hx-target="#leave-{{ lv.pk }}" hx-swap="outerHTML"
+              class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">Reject</button>
+    </div>
+  {% endif %}
+</div>

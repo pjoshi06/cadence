@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Apply for leave · Cadence{% endblock %}
+{% block page_title %}Apply for leave{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-xl">
+  <form method="post" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ form.non_field_errors }}</div>
+    {% endif %}
+    <div class="space-y-4">
+      <div><label class="mb-1 block text-sm font-medium text-slate-700">Leave type</label>{{ form.leave_type }}</div>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="mb-1 block text-sm font-medium text-slate-700">From</label>{{ form.start_date }}{{ form.start_date.errors }}</div>
+        <div><label class="mb-1 block text-sm font-medium text-slate-700">To</label>{{ form.end_date }}{{ form.end_date.errors }}</div>
+      </div>
+      <div><label class="mb-1 block text-sm font-medium text-slate-700">Reason (optional)</label>{{ form.reason }}</div>
+    </div>
+    <div class="mt-8 flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
+      <a href="{% url 'leave_list' %}" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</a>
+      <button class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">Submit request</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

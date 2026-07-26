@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in · Cadence</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui','sans-serif'] } } } }</script>
+</head>
+<body class="min-h-screen bg-slate-100 font-sans antialiased">
+<div class="flex min-h-screen">
+
+  <!-- Left: brand / illustration panel -->
+  <div class="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-slate-900 p-12 lg:flex">
+    <!-- decorative SVG backdrop -->
+    <svg class="absolute inset-0 h-full w-full" viewBox="0 0 800 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#1e1b4b"/>
+          <stop offset="0.55" stop-color="#0f172a"/>
+          <stop offset="1" stop-color="#111827"/>
+        </linearGradient>
+        <linearGradient id="pulse" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#6366f1" stop-opacity="0"/>
+          <stop offset="0.5" stop-color="#818cf8"/>
+          <stop offset="1" stop-color="#6366f1" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <rect width="800" height="900" fill="url(#bg)"/>
+      <!-- cadence / heartbeat lines -->
+      <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M-20 620 H180 l30 -60 40 120 35 -180 40 220 30 -100h465" stroke="url(#pulse)" stroke-width="3"/>
+        <path d="M-20 700 H140 l25 -40 35 80 30 -120 35 150 25 -70h530" stroke="#4f46e5" stroke-opacity="0.35" stroke-width="2"/>
+        <path d="M-20 540 H240 l20 -30 30 60 25 -90 30 110 20 -50h455" stroke="#818cf8" stroke-opacity="0.18" stroke-width="2"/>
+      </g>
+      <!-- concentric rhythm rings -->
+      <g stroke="#6366f1" fill="none">
+        <circle cx="640" cy="180" r="60" stroke-opacity="0.25"/>
+        <circle cx="640" cy="180" r="100" stroke-opacity="0.15"/>
+        <circle cx="640" cy="180" r="140" stroke-opacity="0.08"/>
+        <circle cx="640" cy="180" r="6" fill="#818cf8" stroke="none"/>
+      </g>
+      <!-- calendar / roster grid motif -->
+      <g transform="translate(80,120)" stroke="#334155" fill="none">
+        <rect x="0" y="0" width="300" height="200" rx="14" fill="#0f172a" fill-opacity="0.6" stroke-opacity="0.8"/>
+        <line x1="0" y1="48" x2="300" y2="48" stroke-opacity="0.8"/>
+        <g stroke-opacity="0.35">
+          <line x1="75" y1="48" x2="75" y2="200"/><line x1="150" y1="48" x2="150" y2="200"/><line x1="225" y1="48" x2="225" y2="200"/>
+          <line x1="0" y1="98" x2="300" y2="98"/><line x1="0" y1="148" x2="300" y2="148"/>
+        </g>
+        <rect x="12" y="60" width="51" height="26" rx="6" fill="#38bdf8" fill-opacity="0.35" stroke="none"/>
+        <rect x="87" y="60" width="51" height="26" rx="6" fill="#818cf8" fill-opacity="0.35" stroke="none"/>
+        <rect x="162" y="110" width="51" height="26" rx="6" fill="#a78bfa" fill-opacity="0.35" stroke="none"/>
+        <rect x="237" y="60" width="51" height="26" rx="6" fill="#34d399" fill-opacity="0.35" stroke="none"/>
+        <rect x="12" y="160" width="51" height="26" rx="6" fill="#fbbf24" fill-opacity="0.35" stroke="none"/>
+        <rect x="16" y="14" width="90" height="18" rx="5" fill="#334155" stroke="none"/>
+      </g>
+      <!-- rising bars (report metrics) -->
+      <g transform="translate(470,330)" fill="#6366f1">
+        <rect x="0"  y="90"  width="26" height="60"  rx="5" fill-opacity="0.35"/>
+        <rect x="38" y="60"  width="26" height="90"  rx="5" fill-opacity="0.5"/>
+        <rect x="76" y="30"  width="26" height="120" rx="5" fill-opacity="0.7"/>
+        <rect x="114" y="0"  width="26" height="150" rx="5" fill-opacity="0.9"/>
+      </g>
+      <g fill="#c7d2fe" fill-opacity="0.5">
+        <circle cx="120" cy="430" r="3"/><circle cx="180" cy="405" r="3"/><circle cx="245" cy="440" r="3"/><circle cx="320" cy="400" r="3"/>
+      </g>
+    </svg>
+
+    <!-- brand -->
+    <div class="relative">
+      <div class="flex items-center gap-3">
+        <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 shadow-lg shadow-indigo-950/50">
+          <svg class="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l2-5 4 10 3-7 2 2h5"/></svg>
+        </div>
+        <div>
+          <p class="text-xl font-extrabold tracking-tight text-white">Cadence</p>
+          <p class="text-xs font-medium text-indigo-300">AMS Operations Hub</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- value props -->
+    <div class="relative max-w-md">
+      <h2 class="text-3xl font-extrabold leading-tight text-white">Run your AMS on rhythm.</h2>
+      <p class="mt-3 text-sm leading-relaxed text-slate-300">One workspace for the whole engagement — tickets, tasks, shifts, leaves and client reporting.</p>
+      <ul class="mt-8 space-y-4 text-sm text-slate-200">
+        <li class="flex items-start gap-3">
+          <span class="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-300">✓</span>
+          DSR, WSR &amp; MSR decks generated in one click — not one hour
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-300">✓</span>
+          Shift roster and leave calendar that flag conflicts before they happen
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-300">✓</span>
+          Workload and SLA posture for the whole team, at a glance
+        </li>
+      </ul>
+    </div>
+
+    <p class="relative text-xs text-slate-500">Internal tool · Access is provisioned by the AMS management team</p>
+  </div>
+
+  <!-- Right: sign-in form -->
+  <div class="flex w-full items-center justify-center px-6 py-12 lg:w-1/2">
+    <div class="w-full max-w-sm">
+      <!-- compact brand for small screens -->
+      <div class="mb-8 flex items-center gap-3 lg:hidden">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600">
+          <svg class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l2-5 4 10 3-7 2 2h5"/></svg>
+        </div>
+        <div>
+          <p class="text-lg font-extrabold tracking-tight text-slate-900">Cadence</p>
+          <p class="text-xs font-medium text-slate-500">AMS Operations Hub</p>
+        </div>
+      </div>
+
+      <h1 class="text-2xl font-bold text-slate-900">Welcome back</h1>
+      <p class="mt-1 text-sm text-slate-500">Sign in to your team workspace.</p>
+
+      {% if form.errors %}
+        <div class="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          Invalid username or password. Please try again.
+        </div>
+      {% endif %}
+
+      <form method="post" class="mt-8 space-y-5">
+        {% csrf_token %}
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-slate-700">Username</label>
+          <input type="text" name="username" required autofocus
+                 class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+        </div>
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-slate-700">Password</label>
+          <input type="password" name="password" required
+                 class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+        </div>
+        <button type="submit"
+                class="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+          Sign in
+        </button>
+      </form>
+
+      <p class="mt-8 text-center text-xs text-slate-400">
+        No account? Access is created by your manager — contact the AMS admin.
+      </p>
+    </div>
+  </div>
+</div>
+</body>
+</html>
